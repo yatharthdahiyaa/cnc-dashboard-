@@ -1,7 +1,7 @@
 import { useDashboardStore } from '../store/useDashboardStore';
 
 const ConnectionStatus = () => {
-  const { isConnected, isConnecting, connectionError } = useDashboardStore();
+  const { isConnected, isConnecting, error } = useDashboardStore();
   
   const getStatusConfig = () => {
     if (isConnected) {
@@ -39,9 +39,9 @@ const ConnectionStatus = () => {
       <span className={`text-sm font-medium ${config.color}`}>
         {config.text}
       </span>
-      {connectionError && (
+      {error && (
         <span className="text-xs text-gray-500 ml-2">
-          ({connectionError})
+          ({error})
         </span>
       )}
     </div>

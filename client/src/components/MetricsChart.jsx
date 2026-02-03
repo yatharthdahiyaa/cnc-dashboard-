@@ -1,61 +1,77 @@
+// src/components/MetricsChart.jsx
 import { useDashboardStore } from '../store/useDashboardStore';
+import { useEffect, useState } from 'react';
 
 const MetricsChart = () => {
-  const { getMetricsData } = useDashboardStore();
-  const metricsData = getMetricsData();
+  const { data } = useDashboardStore();
+  const [chartData, setChartData] = useState([]);
 
-  if (metricsData.length === 0) {
+  // Initialize with some sample data if no data exists
+  useEffect(() => {
+    if (data) {
+      // Create or update chart data
+      const newPoint = {
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        spindleSpeed: data.spindle?.speed || 0,
+        spindleLoad: data.spindle?.load || 0,
+        partsCompleted: data.production?.partsCompleted || 0
+      };
+      
+      setChartData(prev => {
+        const updated = [...prev, newPoint];
+        // Keep only last 20 points for performance
+        return updated.slice(-20);
+      });
+    }
+  }, [data]);
+
+  if (chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        <div className="text-center">
-          <div className="text-lg font-medium mb-2">No data available</div>
-          <div className="text-sm">Waiting for live metrics...</div>
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div className="flex items-center justify-center h-64 text-gray-500">
+          <div className="text-center">
+            <div className="text-lg font-medium mb-2">CNC Performance Chart</div>
+            <div className="text-sm">Waiting for data...</div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const maxValue = 100;
   const chartHeight = 200;
   const chartWidth = 600;
+  const maxSpindleSpeed = Math.max(...chartData.map(d => d.spindleSpeed), 1000) * 1.1;
+  const maxSpindleLoad = 100;
 
-  const createPath = (data, color) => {
+  // Simple line path generator
+  const createPath = (data, key, maxValue, offset = 0) => {
     if (data.length < 2) return '';
     
     const points = data.map((item, index) => {
       const x = (index / (data.length - 1)) * chartWidth;
-      const y = chartHeight - (item.value / maxValue) * chartHeight;
+      const y = chartHeight - ((item[key] / maxValue) * chartHeight) + offset;
       return `${x},${y}`;
     });
     
     return `M ${points.join(' L ')}`;
   };
 
-  const cpuData = metricsData.map(item => ({ value: item.cpu }));
-  const memoryData = metricsData.map(item => ({ value: item.memory }));
-  const networkData = metricsData.map(item => ({ value: item.network / 10 }));
-  const diskData = metricsData.map(item => ({ value: item.disk }));
-
   return (
-    <div className="h-80">
-      <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">System Metrics Over Time</h3>
-        <div className="flex items-center gap-4 text-sm">
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">CNC Performance Trends</h3>
+        <div className="flex items-center gap-4 text-sm flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            <span>CPU</span>
+            <span>Spindle Speed</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span>Memory</span>
+            <span>Spindle Load</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-purple-500 rounded"></div>
-            <span>Network</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-orange-500 rounded"></div>
-            <span>Disk</span>
+            <span>Parts Count</span>
           </div>
         </div>
       </div>
@@ -67,58 +83,59 @@ const MetricsChart = () => {
             <line
               key={value}
               x1="0"
-              y1={chartHeight - (value / maxValue) * chartHeight}
+              y1={chartHeight - (value / 100) * chartHeight}
               x2={chartWidth}
-              y2={chartHeight - (value / maxValue) * chartHeight}
+              y2={chartHeight - (value / 100) * chartHeight}
               stroke="#e5e7eb"
               strokeWidth="1"
             />
           ))}
           
-          {/* CPU line */}
+          {/* Spindle Speed line */}
           <path
-            d={createPath(cpuData)}
+            d={createPath(chartData, 'spindleSpeed', maxSpindleSpeed, 0)}
             stroke="#3b82f6"
             strokeWidth="2"
             fill="none"
-            opacity="0.8"
           />
           
-          {/* Memory line */}
+          {/* Spindle Load line */}
           <path
-            d={createPath(memoryData)}
+            d={createPath(chartData, 'spindleLoad', maxSpindleLoad, 0)}
             stroke="#22c55e"
             strokeWidth="2"
             fill="none"
-            opacity="0.8"
-          />
-          
-          {/* Network line */}
-          <path
-            d={createPath(networkData)}
-            stroke="#a855f7"
-            strokeWidth="2"
-            fill="none"
-            opacity="0.8"
-          />
-          
-          {/* Disk line */}
-          <path
-            d={createPath(diskData)}
-            stroke="#f97316"
-            strokeWidth="2"
-            fill="none"
-            opacity="0.8"
           />
         </svg>
       </div>
       
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm font-medium text-gray-600">Current Status</p>
+          <p className={`text-xl font-bold ${data?.cnc?.status === 'RUNNING' ? 'text-green-600' : 'text-yellow-600'}`}>
+            {data?.cnc?.status || 'IDLE'}
+          </p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm font-medium text-gray-600">Current Speed</p>
+          <p className="text-xl font-bold text-gray-900">
+            {data?.cnc?.spindleSpeed?.toLocaleString() || '0'} RPM
+          </p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm font-medium text-gray-600">Parts Made</p>
+          <p className="text-xl font-bold text-gray-900">
+            {data?.cnc?.partsCompleted || 0}
+          </p>
+        </div>
+      </div>
+      
       <div className="mt-4 text-center text-sm text-gray-500">
-        <p>Real-time metrics visualization</p>
-        <p className="mt-1">Data points: {metricsData.length}</p>
+        <p>Updated: {new Date().toLocaleTimeString()}</p>
+        <p className="mt-1">Showing {chartData.length} data points</p>
       </div>
     </div>
   );
 };
 
-export default MetricsChart; 
+export default MetricsChart;

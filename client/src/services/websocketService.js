@@ -1,115 +1,153 @@
+// client/src/services/websocketService.js
 import { io } from 'socket.io-client';
 
 class WebSocketService {
   constructor() {
     this.socket = null;
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 1000;
-    this.isManualDisconnect = false;
+    this.callbacks = {
+      onData: [],
+      onConnect: [],
+      onDisconnect: []
+    };
+    this.isConnecting = false;
+    this.lastData = null;
   }
 
-  connect(url = 'http://localhost:3001') {
-    if (this.socket?.connected) {
-      return this.socket;
+  connect() {
+    if (this.isConnecting || this.socket?.connected) {
+      console.log('Already connecting or connected');
+      return;
     }
 
-    this.isManualDisconnect = false;
-    
-    try {
-      this.socket = io(url, {
-        transports: ['websocket', 'polling'],
-        timeout: 10000,
-        reconnection: true,
-        reconnectionAttempts: this.maxReconnectAttempts,
-        reconnectionDelay: this.reconnectDelay,
-        reconnectionDelayMax: 5000,
-      });
+    this.isConnecting = true;
+    console.log('🔗 Attempting to connect to WebSocket...');
 
-      this.setupEventListeners();
-      
-      return this.socket;
-    } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
-      throw error;
-    }
-  }
-
-  setupEventListeners() {
-    if (!this.socket) return;
-
-    this.socket.on('connect', () => {
-      console.log('Connected to WebSocket server');
-      this.reconnectAttempts = 0;
+    this.socket = io('http://localhost:3002', {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      timeout: 5000,
+      autoConnect: true,
+      forceNew: true
     });
 
-    this.socket.on('disconnect', (reason) => {
-      console.log('Disconnected from WebSocket server:', reason);
+    // Connection events
+    this.socket.on('connect', () => {
+      console.log('✅ WebSocket CONNECTED successfully! Socket ID:', this.socket.id);
+      console.log('📡 Connection details:', this.socket.io.engine.transport.name);
+      this.isConnecting = false;
+      this.callbacks.onConnect.forEach(callback => callback());
       
-      if (reason === 'io server disconnect') {
-        // Server disconnected us, try to reconnect
-        this.socket.connect();
-      }
+      // Immediately request data
+      this.requestData();
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
-      this.reconnectAttempts++;
+      console.error('❌ WebSocket connection FAILED:', error.message);
+      console.error('Error details:', error);
+      this.isConnecting = false;
+    });
+
+    // Data events - MAKE SURE THIS IS WORKING
+    this.socket.on('cnc-data', (data) => {
+      console.log('📥 RECEIVED CNC DATA from server:', data);
+      console.log('📊 Data details - Status:', data.status, 'Speed:', data.spindle?.speed, 'Parts:', data.production?.partsCompleted);
+      this.lastData = data;
       
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('Max reconnection attempts reached');
+      // Send acknowledgment back to server
+      this.socket.emit('cnc-data-received', { received: true, timestamp: new Date().toISOString() });
+      
+      // Call all registered callbacks
+      this.callbacks.onData.forEach(callback => callback(data));
+    });
+
+    // Connection status
+    this.socket.on('disconnect', (reason) => {
+      console.log('🔌 WebSocket DISCONNECTED. Reason:', reason);
+      this.isConnecting = false;
+      this.callbacks.onDisconnect.forEach(callback => callback());
+    });
+
+    this.socket.on('error', (error) => {
+      console.error('⚠️ WebSocket ERROR:', error);
+      this.isConnecting = false;
+    });
+
+    // Log all events for debugging
+    this.socket.onAny((eventName, ...args) => {
+      if (eventName !== 'cnc-data') { // Don't spam console with data events
+        console.log('📡 Socket event:', eventName, args);
       }
     });
 
-    this.socket.on('reconnect', (attemptNumber) => {
-      console.log(`Reconnected after ${attemptNumber} attempts`);
-    });
-
-    this.socket.on('reconnect_error', (error) => {
-      console.error('Reconnection error:', error);
-    });
-
-    this.socket.on('reconnect_failed', () => {
-      console.error('Reconnection failed after max attempts');
-    });
+    // Manual connection
+    this.socket.connect();
   }
 
   disconnect() {
-    this.isManualDisconnect = true;
     if (this.socket) {
+      console.log('Disconnecting WebSocket...');
       this.socket.disconnect();
       this.socket = null;
     }
+    this.isConnecting = false;
   }
 
-  emit(event, data) {
+  sendCommand(command) {
     if (this.socket?.connected) {
-      this.socket.emit(event, data);
+      console.log('Sending command:', command);
+      this.socket.emit('control-command', command);
     } else {
-      console.warn('Socket not connected, cannot emit event:', event);
+      console.warn('Cannot send command: WebSocket not connected');
     }
   }
 
-  on(event, callback) {
-    if (this.socket) {
-      this.socket.on(event, callback);
+  requestData() {
+    if (this.socket?.connected) {
+      console.log('🔄 Requesting data from server...');
+      this.socket.emit('request-data');
+    } else {
+      console.warn('Cannot request data: WebSocket not connected');
     }
   }
 
-  off(event, callback) {
-    if (this.socket) {
-      this.socket.off(event, callback);
+  onData(callback) {
+    console.log('📋 Registering data callback');
+    this.callbacks.onData.push(callback);
+  }
+
+  onConnect(callback) {
+    this.callbacks.onConnect.push(callback);
+  }
+
+  onDisconnect(callback) {
+    this.callbacks.onDisconnect.push(callback);
+  }
+
+  removeCallback(callback) {
+    this.callbacks.onData = this.callbacks.onData.filter(cb => cb !== callback);
+    this.callbacks.onConnect = this.callbacks.onConnect.filter(cb => cb !== callback);
+    this.callbacks.onDisconnect = this.callbacks.onDisconnect.filter(cb => cb !== callback);
+  }
+
+  getConnectionStatus() {
+    return {
+      connected: this.socket?.connected || false,
+      connecting: this.isConnecting,
+      socketId: this.socket?.id,
+      transport: this.socket?.io?.engine?.transport?.name,
+      lastData: this.lastData
+    };
+  }
+
+  // Test connection
+  testConnection() {
+    if (this.socket?.connected) {
+      console.log('🔄 Testing connection...');
+      this.socket.emit('ping', { timestamp: new Date().toISOString() });
     }
-  }
-
-  get isConnected() {
-    return this.socket?.connected || false;
-  }
-
-  get socketId() {
-    return this.socket?.id || null;
   }
 }
 
-// Export singleton instance
-export const websocketService = new WebSocketService(); 
+export const websocketService = new WebSocketService();

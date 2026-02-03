@@ -3,12 +3,14 @@ import { useDashboardStore } from '../store/useDashboardStore';
 const LiveDataTable = () => {
   const { data } = useDashboardStore();
 
-  if (!data?.events) {
+  if (!data) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        <div className="text-center">
-          <div className="text-lg font-medium mb-2">No events available</div>
-          <div className="text-sm">Waiting for live events...</div>
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div className="flex items-center justify-center h-64 text-gray-500">
+          <div className="text-center">
+            <div className="text-lg font-medium mb-2">CNC Machine Status</div>
+            <div className="text-sm">Waiting for data...</div>
+          </div>
         </div>
       </div>
     );
@@ -60,61 +62,53 @@ const LiveDataTable = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900">
-          Recent Events ({data.events.length})
-        </h3>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span className="text-xs text-gray-600">Info</span>
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">Machine Details</h3>
+      
+      <div className="space-y-4 text-sm">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-gray-600 text-xs font-medium">Status</p>
+            <p className="text-lg font-semibold text-gray-900">{data.status || 'UNKNOWN'}</p>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-            <span className="text-xs text-gray-600">Warning</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span className="text-xs text-gray-600">Error</span>
+          <div>
+            <p className="text-gray-600 text-xs font-medium">Last Update</p>
+            <p className="text-lg font-semibold text-gray-900">{formatTimestamp(data.timestamp)}</p>
           </div>
         </div>
-      </div>
-      
-      <div className="space-y-2 max-h-64 overflow-y-auto">
-        {data.events.map((event, index) => (
-          <div
-            key={event.id || index}
-            className={`p-3 rounded-lg border ${getEventColor(event.type)} animate-pulse`}
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">
-                <span className="text-lg">{getEventIcon(event.type)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className={`text-sm font-medium ${getEventTextColor(event.type)}`}>
-                  {event.message}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {formatTimestamp(event.timestamp)}
-                </div>
-              </div>
-              <div className="flex-shrink-0">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getEventTextColor(event.type)} bg-white/50`}>
-                  {event.type.toUpperCase()}
-                </span>
-              </div>
+
+        <div className="border-t border-gray-200 pt-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Position X:</span>
+            <span className="font-semibold text-gray-900">{(data.axis?.x || 0).toFixed(2)} mm</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Position Y:</span>
+            <span className="font-semibold text-gray-900">{(data.axis?.y || 0).toFixed(2)} mm</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Position Z:</span>
+            <span className="font-semibold text-gray-900">{(data.axis?.z || 0).toFixed(2)} mm</span>
+          </div>
+        </div>
+
+        {data.alarms && data.alarms.length > 0 && (
+          <div className="border-t border-gray-200 pt-4">
+            <p className="text-red-600 font-medium">Active Alarms: {data.alarms.length}</p>
+            <div className="mt-2 space-y-1">
+              {data.alarms.map((alarm, idx) => (
+                <p key={idx} className="text-xs text-red-600">• {alarm}</p>
+              ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {(!data.alarms || data.alarms.length === 0) && (
+          <div className="border-t border-gray-200 pt-4">
+            <p className="text-green-600 font-medium">✓ No Active Alarms</p>
+          </div>
+        )}
       </div>
-      
-      {data.events.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <div className="text-2xl mb-2">ℹ️</div>
-          <div className="text-sm">No events to display</div>
-        </div>
-      )}
     </div>
   );
 };

@@ -89,4 +89,11 @@ dist
 
 # Temporary folders
 tmp/
-temp/ 
+temp/
+
+# TLS Certificates — NEVER commit private keys
+server/certs/
+*.pem
+*.key
+*.crt
+*.p12

@@ -5,7 +5,7 @@ class WebSocketService {
   constructor() {
     this.socket = null;
     this.callbacks = {
-      onData: [],
+      onMachinesData: [],
       onConnect: [],
       onDisconnect: []
     };
@@ -15,79 +15,63 @@ class WebSocketService {
 
   connect() {
     if (this.isConnecting || this.socket?.connected) {
-      console.log('Already connecting or connected');
       return;
     }
 
     this.isConnecting = true;
-    console.log('🔗 Attempting to connect to WebSocket...');
 
-    this.socket = io('http://localhost:3002', {
+    // Connect via the Vite dev proxy (empty string = same origin).
+    // Vite proxies /socket.io → https://localhost:3443 transparently.
+    // In production, set VITE_WS_URL to your actual server URL.
+    const serverUrl = import.meta.env.VITE_WS_URL || '';
+
+    console.log(`🔌 Connecting via ${serverUrl || 'Vite proxy → https://localhost:3443'}`);
+
+    this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      timeout: 5000,
+      timeout: 8000,
       autoConnect: true,
-      forceNew: true
+      forceNew: true,
     });
 
-    // Connection events
     this.socket.on('connect', () => {
-      console.log('✅ WebSocket CONNECTED successfully! Socket ID:', this.socket.id);
-      console.log('📡 Connection details:', this.socket.io.engine.transport.name);
+      console.log('✅ WebSocket connected:', this.socket.id);
       this.isConnecting = false;
-      this.callbacks.onConnect.forEach(callback => callback());
-      
-      // Immediately request data
+      this.callbacks.onConnect.forEach(cb => cb());
       this.requestData();
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('❌ WebSocket connection FAILED:', error.message);
-      console.error('Error details:', error);
+      console.error('❌ WebSocket connection failed:', error.message);
       this.isConnecting = false;
     });
 
-    // Data events - MAKE SURE THIS IS WORKING
-    this.socket.on('cnc-data', (data) => {
-      console.log('📥 RECEIVED CNC DATA from server:', data);
-      console.log('📊 Data details - Status:', data.status, 'Speed:', data.spindle?.speed, 'Parts:', data.production?.partsCompleted);
+    // Multi-machine data event
+    this.socket.on('machines-data', (data) => {
       this.lastData = data;
-      
-      // Send acknowledgment back to server
       this.socket.emit('cnc-data-received', { received: true, timestamp: new Date().toISOString() });
-      
-      // Call all registered callbacks
-      this.callbacks.onData.forEach(callback => callback(data));
+      this.callbacks.onMachinesData.forEach(cb => cb(data));
     });
 
-    // Connection status
     this.socket.on('disconnect', (reason) => {
-      console.log('🔌 WebSocket DISCONNECTED. Reason:', reason);
+      console.log('🔌 WebSocket disconnected:', reason);
       this.isConnecting = false;
-      this.callbacks.onDisconnect.forEach(callback => callback());
+      this.callbacks.onDisconnect.forEach(cb => cb());
     });
 
     this.socket.on('error', (error) => {
-      console.error('⚠️ WebSocket ERROR:', error);
+      console.error('⚠️ WebSocket error:', error);
       this.isConnecting = false;
     });
 
-    // Log all events for debugging
-    this.socket.onAny((eventName, ...args) => {
-      if (eventName !== 'cnc-data') { // Don't spam console with data events
-        console.log('📡 Socket event:', eventName, args);
-      }
-    });
-
-    // Manual connection
     this.socket.connect();
   }
 
   disconnect() {
     if (this.socket) {
-      console.log('Disconnecting WebSocket...');
       this.socket.disconnect();
       this.socket = null;
     }
@@ -96,25 +80,18 @@ class WebSocketService {
 
   sendCommand(command) {
     if (this.socket?.connected) {
-      console.log('Sending command:', command);
       this.socket.emit('control-command', command);
-    } else {
-      console.warn('Cannot send command: WebSocket not connected');
     }
   }
 
   requestData() {
     if (this.socket?.connected) {
-      console.log('🔄 Requesting data from server...');
       this.socket.emit('request-data');
-    } else {
-      console.warn('Cannot request data: WebSocket not connected');
     }
   }
 
-  onData(callback) {
-    console.log('📋 Registering data callback');
-    this.callbacks.onData.push(callback);
+  onMachinesData(callback) {
+    this.callbacks.onMachinesData.push(callback);
   }
 
   onConnect(callback) {
@@ -126,7 +103,7 @@ class WebSocketService {
   }
 
   removeCallback(callback) {
-    this.callbacks.onData = this.callbacks.onData.filter(cb => cb !== callback);
+    this.callbacks.onMachinesData = this.callbacks.onMachinesData.filter(cb => cb !== callback);
     this.callbacks.onConnect = this.callbacks.onConnect.filter(cb => cb !== callback);
     this.callbacks.onDisconnect = this.callbacks.onDisconnect.filter(cb => cb !== callback);
   }
@@ -137,16 +114,7 @@ class WebSocketService {
       connecting: this.isConnecting,
       socketId: this.socket?.id,
       transport: this.socket?.io?.engine?.transport?.name,
-      lastData: this.lastData
     };
-  }
-
-  // Test connection
-  testConnection() {
-    if (this.socket?.connected) {
-      console.log('🔄 Testing connection...');
-      this.socket.emit('ping', { timestamp: new Date().toISOString() });
-    }
   }
 }
 

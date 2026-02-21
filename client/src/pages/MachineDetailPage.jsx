@@ -8,6 +8,7 @@ import SystemStatus from '../components/SystemStatus';
 import JobProgress from '../components/JobProgress';
 import GaugeChart from '../components/charts/GaugeChart';
 import HeatmapChart from '../components/charts/HeatmapChart';
+import HistoryChart from '../components/charts/HistoryChart';
 import { useEffect, useMemo } from 'react';
 import { FaChevronRight, FaHome } from 'react-icons/fa';
 
@@ -166,6 +167,9 @@ const MachineDetailPage = () => {
 
             {/* Heatmap */}
             <HeatmapChart data={heatmapData} title="Machine Zone Temperatures" unit="°C" />
+
+            {/* Historical Trend from Postgres */}
+            <HistoryChart machineId={id} limit={120} />
 
             {/* Charts */}
             <MetricsChart machineId={id} />

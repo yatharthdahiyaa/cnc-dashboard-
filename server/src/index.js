@@ -15,6 +15,7 @@ import googleSheetService from './services/GoogleSheetService.js';
 import authMiddleware from './middleware/authMiddleware.js';
 import { validateBulkPush, validateSinglePush } from './middleware/validatePayload.js';
 import { requireSupervisor } from './middleware/roleMiddleware.js';
+import { initDb, saveReading, getHistory } from './services/db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -219,6 +220,20 @@ app.get('/api/machines/:id', (req, res) => {
 
 app.get('/api/cnn/predictions', (req, res) => res.json(cnnPredictions));
 
+/**
+ * GET /api/history?machine=machine1&limit=200
+ * Returns last N readings from Postgres for a given machine (oldest → newest).
+ */
+app.get('/api/history', readLimiter, async (req, res) => {
+  const machineId = req.query.machine || 'machine1';
+  const limit = Math.min(parseInt(req.query.limit, 10) || 200, 1000);
+  if (!['machine1', 'machine2'].includes(machineId)) {
+    return res.status(400).json({ error: 'Invalid machine. Use machine1 or machine2.' });
+  }
+  const rows = await getHistory(machineId, limit);
+  res.json({ machineId, count: rows.length, rows });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -254,6 +269,10 @@ app.post('/api/data/push', writeLimiter, authMiddleware, requireSupervisor, vali
     hasLiveData = true;
     io.emit('machines-data', machinesState);
 
+    // Persist to Postgres (fire-and-forget)
+    if (machine1) saveReading('machine1', machine1);
+    if (machine2) saveReading('machine2', machine2);
+
     const updated = [machine1 && 'machine1', machine2 && 'machine2'].filter(Boolean);
     auditLog('data_push_bulk', req, { updated });
 
@@ -279,6 +298,9 @@ app.post('/api/machines/:id/data', writeLimiter, authMiddleware, requireSupervis
     machinesState[machineId] = buildMachineObject(machineId, machineName, req.body);
     hasLiveData = true;
     io.emit('machines-data', machinesState);
+
+    // Persist to Postgres (fire-and-forget)
+    saveReading(machineId, req.body);
 
     auditLog('data_push_single', req, { machineId });
 
@@ -318,6 +340,9 @@ app.post('/api/cnn/predict', writeLimiter, authMiddleware, requireSupervisor, (r
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
+// Initialise Postgres (safe no-op if DATABASE_URL not set)
+initDb();
+
 const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 const HTTP_PORT = process.env.PORT || 3002;
 

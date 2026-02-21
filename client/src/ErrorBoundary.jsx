@@ -1,6 +1,17 @@
 // client/src/ErrorBoundary.jsx
 import React from 'react';
 
+// Detects Vite chunk-load errors caused by stale Vercel deployments.
+// On first occurrence, reloads the page once (guarded to avoid reload loops).
+function isChunkLoadError(error) {
+    return (
+        error?.name === 'ChunkLoadError' ||
+        error?.message?.includes('Failed to fetch dynamically imported module') ||
+        error?.message?.includes('Importing a module script failed') ||
+        error?.message?.includes('error loading dynamically imported module')
+    );
+}
+
 class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
@@ -8,12 +19,21 @@ class ErrorBoundary extends React.Component {
     }
 
     static getDerivedStateFromError(error) {
+        if (isChunkLoadError(error)) {
+            const reloadKey = 'chunk_reload_at';
+            const last = parseInt(sessionStorage.getItem(reloadKey) || '0', 10);
+            if (Date.now() - last > 10_000) {
+                sessionStorage.setItem(reloadKey, Date.now().toString());
+                window.location.reload();
+                return { hasError: false, error: null, errorInfo: null };
+            }
+        }
         return { hasError: true, error };
     }
 
     componentDidCatch(error, errorInfo) {
         this.setState({ errorInfo });
-        console.error('❌ ErrorBoundary caught:', error, errorInfo?.componentStack);
+        console.error('ErrorBoundary caught:', error, errorInfo?.componentStack);
     }
 
     render() {

@@ -103,7 +103,7 @@ function auditLog(action, req, extra = {}) {
 }
 
 // ─── In-memory state ─────────────────────────────────────────────────────────
-let machinesState = { machine1: null, machine2: null };
+let machinesState = { machine1: null };
 let hasLiveData = false;
 
 let cnnPredictions = {

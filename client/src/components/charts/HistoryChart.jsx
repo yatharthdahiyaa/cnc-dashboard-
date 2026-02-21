@@ -106,7 +106,7 @@ const HistoryChart = ({ machineId = 'machine1', limit = 120 }) => {
 
             {/* Spindle RPM chart */}
             <div>
-                <p className="text-gray-400 text-xs font-medium mb-2">Spindle Speed (RPM)</p>
+                <p className="text-gray-400 text-xs font-medium mb-2">S1 Main Spindle Speed (RPM)</p>
                 <ResponsiveContainer width="100%" height={180}>
                     <LineChart data={data} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />

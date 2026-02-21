@@ -30,7 +30,7 @@ const MetricsCards = () => {
       trend: cncData.status === 'RUNNING' ? 'normal' : 'low'
     },
     {
-      title: 'Spindle Speed',
+      title: 'S1 — Main Spindle Speed',
       value: `${(cncData.spindle?.speed || 0).toLocaleString()} RPM`,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -58,13 +58,13 @@ const MetricsCards = () => {
     {
       title: 'Spindle Load',
       value: `${(cncData.spindle?.load || 0).toFixed(1)}%`,
-      color: (cncData.spindle?.load || 0) > 90 ? 'text-red-600' : 
-             (cncData.spindle?.load || 0) > 70 ? 'text-yellow-600' : 'text-green-600',
-      bgColor: (cncData.spindle?.load || 0) > 90 ? 'bg-red-50' : 
-               (cncData.spindle?.load || 0) > 70 ? 'bg-yellow-50' : 'bg-green-50',
+      color: (cncData.spindle?.load || 0) > 90 ? 'text-red-600' :
+        (cncData.spindle?.load || 0) > 70 ? 'text-yellow-600' : 'text-green-600',
+      bgColor: (cncData.spindle?.load || 0) > 90 ? 'bg-red-50' :
+        (cncData.spindle?.load || 0) > 70 ? 'bg-yellow-50' : 'bg-green-50',
       icon: '📊',
-      trend: (cncData.spindle?.load || 0) > 90 ? 'high' : 
-             (cncData.spindle?.load || 0) > 70 ? 'medium' : 'low'
+      trend: (cncData.spindle?.load || 0) > 90 ? 'high' :
+        (cncData.spindle?.load || 0) > 70 ? 'medium' : 'low'
     }
   ];
 
@@ -102,9 +102,9 @@ const MetricsCards = () => {
           <div className="mt-4">
             <div className="flex items-center text-sm">
               <span className={`font-medium ${getTrendColor(metric.trend).text}`}>
-                {metric.trend === 'high' ? 'High' : 
-                 metric.trend === 'medium' ? 'Medium' : 
-                 metric.trend === 'low' ? 'Low' : 'Normal'}
+                {metric.trend === 'high' ? 'High' :
+                  metric.trend === 'medium' ? 'Medium' :
+                    metric.trend === 'low' ? 'Low' : 'Normal'}
               </span>
               <div className={`ml-2 w-2 h-2 rounded-full ${getTrendColor(metric.trend).bg}`} />
             </div>

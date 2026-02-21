@@ -89,7 +89,7 @@ const MetricsChart = ({ machineId }) => {
       <div className="flex justify-center gap-6 mt-4 text-xs">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-accent-blue rounded"></div>
-          <span className="text-gray-400">Spindle Speed</span>
+          <span className="text-gray-400">S1 Main Spindle Speed</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-accent-purple rounded"></div>

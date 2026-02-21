@@ -74,7 +74,7 @@ const SettingsPage = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                        { key: 'spindleSpeed', label: 'Max Spindle Speed (RPM)', min: 1000, max: 20000, step: 100 },
+                        { key: 'spindleSpeed', label: 'S1 Max Main Spindle Speed (RPM)', min: 1000, max: 20000, step: 100 },
                         { key: 'spindleLoad', label: 'Max Spindle Load (%)', min: 10, max: 100, step: 5 },
                         { key: 'temperature', label: 'Max Temperature (°C)', min: 30, max: 100, step: 5 },
                         { key: 'oee', label: 'Min OEE (%)', min: 10, max: 100, step: 5 },

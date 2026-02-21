@@ -131,7 +131,7 @@ const MachineCard = ({ machine }) => {
                 <div className="space-y-2.5">
                     <div>
                         <p className="text-[10px] text-gray-500 mb-0.5">
-                            Spindle Speed
+                            S1 — Main Spindle Speed
                             {speedTrend !== null && Math.abs(speedTrend) > 100 && (
                                 <span className={`ml-1 font-bold ${speedTrend > 0 ? 'text-green-400' : 'text-amber-400'}`}>
                                     {speedTrend > 0 ? '▲' : '▼'}

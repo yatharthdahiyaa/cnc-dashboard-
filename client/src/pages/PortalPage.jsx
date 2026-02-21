@@ -126,7 +126,7 @@ const PortalPage = () => {
                             onClick={() => navigate('/machine/machine1')}
                         >
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">S1 — Spindle</span>
+                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">S1 — Main Spindle</span>
                                 <FaCogs size={12} className="text-accent-cyan opacity-60" />
                             </div>
                             <div className="text-3xl font-black text-white font-mono">{s1.toLocaleString()}</div>

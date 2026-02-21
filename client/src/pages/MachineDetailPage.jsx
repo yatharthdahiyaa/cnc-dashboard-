@@ -142,7 +142,7 @@ const MachineDetailPage = () => {
 
             {/* ── 4 Metric Cards ─────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <MetricCard label="S1 — Spindle Speed" value={s1.toLocaleString()} unit="RPM" color="text-accent-cyan"
+                <MetricCard label="S1 — Main Spindle Speed" value={s1.toLocaleString()} unit="RPM" color="text-accent-cyan"
                     sub={s1 < 10 ? '⚠ Near zero' : s1 > 8000 ? '🔺 High speed' : 'Normal'} />
                 <MetricCard label="Master — Feed Rate" value={master} unit="%" color="text-blue-400"
                     sub={master === 0 ? 'Feed stopped' : master > 80 ? 'High feed' : 'Normal feed'} />
@@ -156,7 +156,7 @@ const MachineDetailPage = () => {
             {/* ── Gauge bars ─────────────────────────────────────────────────── */}
             <div className="glass-card p-6 space-y-5">
                 <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Live Gauges</h2>
-                <GaugeBar label="S1 Spindle Speed" value={s1} max={12000} unit="RPM"
+                <GaugeBar label="S1 Main Spindle Speed" value={s1} max={12000} unit="RPM"
                     color="linear-gradient(90deg,#00d4ff,#4f8ef7)" />
                 <GaugeBar label="Master Feed Rate" value={master} max={100} unit="%"
                     color="linear-gradient(90deg,#4f8ef7,#a78bfa)" />

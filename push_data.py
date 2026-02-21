@@ -17,8 +17,8 @@ import math
 import random
 
 # ─── Configuration ─────────────────────────────────────────────────────────────
-SERVER_URL = "http://localhost:3002"
-ACCESS_TOKEN = "cnc-dashboard-secret-token-change-me"  # Must match API_ACCESS_TOKEN in server/.env
+SERVER_URL = "https://server-production-d513.up.railway.app"
+ACCESS_TOKEN = "cnc-dashboard-secret-token-change-me"  # Must match API_ACCESS_TOKEN on Railway
 
 HEADERS = {
     "Authorization": f"Bearer {ACCESS_TOKEN}",

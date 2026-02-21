@@ -144,8 +144,8 @@ const MachineDetailPage = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard label="S1 — Main Spindle Speed" value={s1.toLocaleString()} unit="RPM" color="text-accent-cyan"
                     sub={s1 < 10 ? '⚠ Near zero' : s1 > 8000 ? '🔺 High speed' : 'Normal'} />
-                <MetricCard label="Master — Feed Rate" value={master} unit="%" color="text-blue-400"
-                    sub={master === 0 ? 'Feed stopped' : master > 80 ? 'High feed' : 'Normal feed'} />
+                <MetricCard label="Master — Spindle Speed" value={master.toLocaleString()} unit="RPM" color="text-blue-400"
+                    sub={master === 0 ? 'Stopped' : master > 4000 ? 'High speed' : 'Normal'} />
                 <MetricCard label="Workpiece Actual" value={partsActual} unit="pcs" color="text-violet-400"
                     sub={partsTarget > 0 ? `${progressPct}% of target` : 'No target set'} />
                 <MetricCard label="Workpiece Target" value={partsTarget > 0 ? partsTarget : '—'} unit={partsTarget > 0 ? 'pcs' : ''}
@@ -158,7 +158,7 @@ const MachineDetailPage = () => {
                 <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Live Gauges</h2>
                 <GaugeBar label="S1 Main Spindle Speed" value={s1} max={12000} unit="RPM"
                     color="linear-gradient(90deg,#00d4ff,#4f8ef7)" />
-                <GaugeBar label="Master Feed Rate" value={master} max={100} unit="%"
+                <GaugeBar label="Master Spindle Speed" value={master} max={6000} unit="RPM"
                     color="linear-gradient(90deg,#4f8ef7,#a78bfa)" />
                 {partsTarget > 0 && (
                     <GaugeBar label="Workpiece Progress" value={partsActual} max={partsTarget} unit="pcs"
@@ -175,7 +175,7 @@ const MachineDetailPage = () => {
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-accent-cyan inline-block rounded" /> S1 (RPM)</span>
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-blue-400 inline-block rounded" /> Master (%)</span>
+                        <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-blue-400 inline-block rounded" /> Master (RPM)</span>
                     </div>
                 </div>
                 <ResponsiveContainer width="100%" height={220}>
@@ -187,7 +187,7 @@ const MachineDetailPage = () => {
                         <Tooltip content={<DualTooltip />} />
                         <ReferenceLine yAxisId="left" y={10} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: 'Idle threshold', fill: '#f59e0b', fontSize: 10 }} />
                         <Line yAxisId="left" type="monotone" dataKey="s1" name="S1 RPM" stroke="#00d4ff" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                        <Line yAxisId="right" type="monotone" dataKey="master" name="Master %" stroke="#4f8ef7" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        <Line yAxisId="right" type="monotone" dataKey="master" name="Master RPM" stroke="#4f8ef7" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                     </LineChart>
                 </ResponsiveContainer>
             </div>

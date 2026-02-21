@@ -146,7 +146,7 @@ const PortalPage = () => {
                             onClick={() => navigate('/machine/machine1')}
                         >
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Master — Feed</span>
+                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Master — Spindle</span>
                                 <FaCogs size={12} className="text-accent-blue opacity-60" />
                             </div>
                             <div className="text-3xl font-black text-white font-mono">{master.toLocaleString()}</div>
@@ -209,7 +209,7 @@ const PortalPage = () => {
                             </div>
                             <div>
                                 <div className="text-xl font-mono font-bold text-white">{master}</div>
-                                <div className="text-[10px] text-gray-500 uppercase tracking-wider">Master %</div>
+                                <div className="text-[10px] text-gray-500 uppercase tracking-wider">Master RPM</div>
                             </div>
                             <div className="text-accent-cyan text-sm hover:text-accent-cyan/70 transition-colors font-medium">
                                 View Details →

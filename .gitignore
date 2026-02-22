@@ -1,5 +1,9 @@
 # Dependencies
 node_modules/
+# Root lock file — platform-specific (Windows vs Linux esbuild binaries differ)
+# Each CI platform (Vercel, Railway) regenerates it via `npm install`
+/package-lock.json
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

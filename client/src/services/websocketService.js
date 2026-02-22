@@ -20,23 +20,28 @@ class WebSocketService {
 
     this.isConnecting = true;
 
-    // Connect via the Vite dev proxy (empty string = same origin).
-    // Vite proxies /socket.io → https://localhost:3443 transparently.
-    // In production, set VITE_WS_URL to your actual server URL.
-    const serverUrl = import.meta.env.VITE_WS_URL || '';
+    // ── Server URL Configuration ──────────────────────────────────────────
+    let serverUrl = import.meta.env.VITE_WS_URL || window.location.origin;
 
-    console.log(`🔌 Connecting via ${serverUrl || 'Vite proxy → https://localhost:3443'}`);
+    // Fix: Ensure URL has a protocol (important for Railway/Production)
+    if (serverUrl && !serverUrl.startsWith('http') && !serverUrl.startsWith('//')) {
+      serverUrl = `https://${serverUrl}`;
+    }
+
+    // Fix: Remove trailing slash to prevent double-slash in /socket.io path
+    serverUrl = serverUrl.replace(/\/$/, '');
+
+    console.log(`🔌 Connecting to Server: ${serverUrl}`);
 
     this.socket = io(serverUrl, {
-      // Start with polling (works on all devices/networks) then upgrade to WS
-      transports: ['polling', 'websocket'],
+      path: '/socket.io',
+      transports: ['polling', 'websocket'], // Polling first for better compatibility
       reconnection: true,
-      reconnectionAttempts: 15,
-      reconnectionDelay: 1500,
+      reconnectionAttempts: 20,
+      reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
       autoConnect: true,
-      forceNew: true,
     });
 
     this.socket.on('connect', () => {

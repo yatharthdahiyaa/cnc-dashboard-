@@ -46,20 +46,33 @@ app.use(helmet({
 // Support multiple allowed origins (comma-separated in CLIENT_ORIGIN env var)
 // Falls back to allowing localhost + any LAN IP (192.168.x.x) in dev
 const ALLOWED_ORIGINS = process.env.CLIENT_ORIGIN
-  ? process.env.CLIENT_ORIGIN.split(',').map(o => o.trim())
+  ? process.env.CLIENT_ORIGIN.split(',').map(o => o.trim().replace(/\/$/, ''))
   : null;
 
 function isAllowedOrigin(origin) {
-  if (!origin) return true; // allow non-browser requests (e.g. push scripts)
-  if (ALLOWED_ORIGINS) return ALLOWED_ORIGINS.includes(origin);
-  // Dev fallback: allow localhost on any port and local LAN IPs
-  return /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
+  if (!origin) return true;
+  const normalizedOrigin = origin.trim().replace(/\/$/, '');
+
+  if (ALLOWED_ORIGINS && ALLOWED_ORIGINS.includes(normalizedOrigin)) return true;
+
+  // Dev & Cloud fallback: allow localhost, any LAN IP, and common deployment domains
+  const isAllowed = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/.test(normalizedOrigin) ||
+    normalizedOrigin.endsWith('.vercel.app') ||
+    normalizedOrigin.endsWith('.railway.app');
+
+  if (!isAllowed) {
+    console.warn(`🚫 CORS Rejected: ${origin}`);
+  }
+  return isAllowed;
 }
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) callback(null, true);
-    else callback(new Error(`CORS blocked: ${origin}`));
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false); // Reject silently or handle via error
+    }
   },
   methods: ['GET', 'POST'],
   credentials: true,
@@ -96,8 +109,11 @@ app.use(readLimiter);
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) callback(null, true);
-      else callback(new Error(`CORS blocked: ${origin}`));
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
     },
     methods: ['GET', 'POST'],
     credentials: true,

@@ -43,10 +43,24 @@ app.use(helmet({
 }));
 
 // ─── CORS — only allow the dashboard client ───────────────────────────────────
-const ALLOWED_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+// Support multiple allowed origins (comma-separated in CLIENT_ORIGIN env var)
+// Falls back to allowing localhost + any LAN IP (192.168.x.x) in dev
+const ALLOWED_ORIGINS = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(',').map(o => o.trim())
+  : null;
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // allow non-browser requests (e.g. push scripts)
+  if (ALLOWED_ORIGINS) return ALLOWED_ORIGINS.includes(origin);
+  // Dev fallback: allow localhost on any port and local LAN IPs
+  return /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
+}
 
 app.use(cors({
-  origin: ALLOWED_ORIGIN,
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) callback(null, true);
+    else callback(new Error(`CORS blocked: ${origin}`));
+  },
   methods: ['GET', 'POST'],
   credentials: true,
 }));
@@ -81,7 +95,10 @@ app.use(readLimiter);
 // ─── WebSocket ────────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: ALLOWED_ORIGIN,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) callback(null, true);
+      else callback(new Error(`CORS blocked: ${origin}`));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },

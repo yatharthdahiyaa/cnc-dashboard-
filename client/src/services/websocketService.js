@@ -28,11 +28,13 @@ class WebSocketService {
     console.log(`🔌 Connecting via ${serverUrl || 'Vite proxy → https://localhost:3443'}`);
 
     this.socket = io(serverUrl, {
-      transports: ['websocket', 'polling'],
+      // Start with polling (works on all devices/networks) then upgrade to WS
+      transports: ['polling', 'websocket'],
       reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      timeout: 8000,
+      reconnectionAttempts: 15,
+      reconnectionDelay: 1500,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
       autoConnect: true,
       forceNew: true,
     });

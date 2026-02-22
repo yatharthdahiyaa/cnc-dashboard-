@@ -99,7 +99,23 @@ const PortalPage = () => {
                 </div>
             )}
 
-            {!machine && !isConnecting && (
+            {!machine && !isConnecting && !isConnected && (
+                <div className="text-center py-20 text-gray-600">
+                    <FaIndustry size={40} className="mx-auto mb-4 opacity-30" />
+                    <p className="text-lg text-red-400/80">Connection failed</p>
+                    <p className="text-sm mt-2 max-w-sm mx-auto">
+                        Could not reach the CNC server. Check that the server is running and you are on the same network.
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-4 px-4 py-2 text-xs rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-colors"
+                    >
+                        Retry Connection
+                    </button>
+                </div>
+            )}
+
+            {!machine && !isConnecting && isConnected && (
                 <div className="text-center py-20 text-gray-600">
                     <FaIndustry size={40} className="mx-auto mb-4 opacity-30" />
                     <p className="text-lg">Waiting for data stream...</p>

@@ -28,9 +28,23 @@ self.addEventListener('activate', (event) => {
 // ─── Fetch: network-first for API/WS, cache-first for assets ─────────────────
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
+    const swOrigin = self.location.origin;
 
-    // Never intercept WebSocket or API calls — let them go to the network
-    if (url.pathname.startsWith('/api/') || url.protocol === 'ws:' || url.protocol === 'wss:') {
+    // CRITICAL: Never intercept cross-origin requests — this includes Socket.IO
+    // polling requests which go to the Railway server (different origin).
+    // Service Workers cannot fetch cross-origin URLs without CORS support,
+    // and intercepting Socket.IO breaks the connection entirely.
+    if (url.origin !== swOrigin) {
+        return; // Let the browser handle it natively
+    }
+
+    // Never intercept WebSocket upgrades or API calls
+    if (
+        url.pathname.startsWith('/api/') ||
+        url.pathname.startsWith('/socket.io/') ||
+        url.protocol === 'ws:' ||
+        url.protocol === 'wss:'
+    ) {
         return;
     }
 

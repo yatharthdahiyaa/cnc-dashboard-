@@ -231,7 +231,24 @@ io.on('connection', (socket) => {
 
 // ─── Public routes ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.send('<h1>CNC Dashboard Server 🚀</h1><p><a href="http://localhost:5173">Open Dashboard</a></p>');
+  res.json({
+    name: 'CNC Dashboard Server',
+    status: 'running',
+    uptime: Math.floor(process.uptime()),
+    clients: connectedClients.size,
+    hasLiveData,
+  });
+});
+
+// Health check — used by Railway (railway.toml) to confirm the server is ready
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    clients: connectedClients.size,
+    hasLiveData,
+  });
 });
 
 app.get('/api/machines', async (req, res) => {
